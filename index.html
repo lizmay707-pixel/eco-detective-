@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco-Detective: Desafío de Impactos</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #eef2f7; padding: 20px; color: #2c3e50; }
+        .pantalla { display: none; background: white; max-width: 850px; margin: 20px auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        #contenedor-juego { position: relative; display: inline-block; margin-top: 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); background: transparent; }
+        #imagen-escenario { display: block; max-width: 100%; height: auto; cursor: crosshair; }
+        .marcador { position: absolute; border: 4px solid; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        .correcto { border-color: #27ae60; background: rgba(39, 174, 96, 0.2); }
+        .incorrecto { border-color: #c0392b; background: rgba(192, 57, 43, 0.2); }
+        input, button { padding: 12px 20px; font-size: 16px; margin: 10px; border-radius: 6px; border: 1px solid #ccc; outline: none; }
+        button { background: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        button:hover { background: #219653; }
+        #cronometro { font-size: 24px; font-weight: bold; color: #e74c3c; margin: 10px 0; }
+        table { margin: 25px auto; border-collapse: collapse; width: 100%; max-width: 500px; background: white; }
+        th, td { padding: 14px; border-bottom: 1px solid #e0e0e0; text-align: center; }
+        th { background-color: #34495e; color: white; font-weight: 600; }
+        tr:nth-child(even) { background-color: #f9fbfd; }
+        #alerta-penalizacion { color: #c0392b; font-weight: bold; display: none; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA 1: INGRESO DE JUGADOR -->
+    <div id="pantalla-inicio" class="pantalla" style="display: block;">
+        <h1>🌱 Eco-Detective</h1>
+        <p>Encuentra los impactos ambientales en oficinas, terrazas y hogares lo más rápido posible.</p>
+        <p>Ingresa tu nombre para registrar tu tiempo en el ranking:</p>
+        <input type="text" id="nombre-jugador" placeholder="Tu nombre o alias" maxlength="15">
+        <br>
+        <button id="btn-iniciar">Comenzar Desafío</button>
+    </div>
+
+    <!-- PANTALLA 2: AREA DE JUEGO -->
+    <div id="pantalla-juego" class="pantalla">
+        <h2 id="info-nivel">Cargando...</h2>
+        <div id="cronometro">0.00s</div>
+        <div id="alerta-penalizacion">¡Error! +3 segundos</div>
+        <div id="contenedor-juego">
+            <img id="imagen-escenario" src="" alt="Cargando escenario ambiental...">
+        </div>
+        <p id="mensaje">Cargando escenario...</p>
+        <button id="btn-siguiente" style="display:none;">Siguiente Nivel</button>
+    </div>
+
+    <!-- PANTALLA 3: RANKING GLOBAL SIMULADO -->
+    <div id="pantalla-ranking" class="pantalla">
+        <h1>🏆 Tabla de Clasificación</h1>
+        <p>Los tiempos más rápidos guardados en esta sesión:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Posición</th>
+                    <th>Detective</th>
+                    <th>Tiempo Total</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo-tabla">
+                <!-- Se llena mediante JavaScript interno -->
+            </tbody>
+        </table>
+        <button id="btn-reiniciar">Volver a Jugar</button>
+    </div>
+
+    <script>
+        // MODO DISEÑADOR: Cambia a true si quieres ver las coordenadas (X, Y) en la consola al hacer clic
+        const MODO_DISEÑADOR = true; 
+
+        // CONFIGURACIÓN DE NIVELES E IMPACTOS REALES
+        const niveles = [
+            {
+                nivel: 1,
+                entorno: "Oficina",
+                imagen: "oficina1.png", 
+                impactosRequeridos: 7, 
+                impactos: [
+                    { nombre: "Luz encendida en espacio vacío", X: 20, Y: 54, radio: 8, encontrado: false },
+                    { nombre: "Computador encendido sin usuario", X: 62, Y: 62, radio: 7, encontrado: false },
+                    { nombre: "Uso de vasos desechables",  X: 68, Y: 8, radio: 5, encontrado: false },
+                    { nombre: "Cable conectado sin uso", X: 18, Y: 72, radio: 6, encontrado: false },
+                    { nombre: "Hojas impresas innecesariamente", X: 64, Y: 51, radio: 6, encontrado: false },
+                    { nombre: "Incorrecta separación de residuos", X: 52, Y: 17, radio: 8, encontrado: false },
+                    { nombre: "Llave del lavamanos abierta", X: 91, Y: 37, radio: 7, encontrado: false }
+                ]
+            },
+            {
+                nivel: 2,
+                entorno: "Terraza",
+                imagen: "Terraza.png",
+                impactosRequeridos: 8,
+                impactos: [
+                    { nombre: "Vaso desechable utilizado", X: 35, Y: 45, radio: 6, encontrado: false },
+                    { nombre: "Alimento desperdiciado", X: 79, Y: 90, radio: 2, encontrado: false },
+                    { nombre: "Llave abierta", X: 11, Y: 69, radio: 7, encontrado: false },
+                    { nombre: "Residuo orgánico mal clasificado",  X: 55, Y: 73, radio: 8, encontrado: false },
+                    { nombre: "Envase contaminado con comida", X: 84, Y: 74, radio: 6, encontrado: false },
+                    { nombre: "Servilletas en exceso", X: 57, Y: 54, radio: 5, encontrado: false },
+                    { nombre: "Luces encendidas en zona vacía", 91, Y: 15, radio: 10, encontrado: false },
+                    { nombre: "Botella plástica desechable",X: 96, Y: 52, radio: 6, encontrado: false }
+                ]
+            },
+            {
+                nivel: 3,
+                entorno: "Hogar",
+                imagen: "Hogar.png",
+                impactosRequeridos: 9,
+                impactos: [
+                    { nombre: "Luz encendida innecesariamente", X: 18, Y: 16, radio: 5, encontrado: false },
+                    { nombre: "Monitor encendido", X: 17, Y: 52, radio: 4, encontrado: false },
+                    { nombre: "Cargador conectado",  X: 14, Y: 64, radio: 2, encontrado: false },
+                    { nombre: "Aire acondicionado con ventana abierta", X: 61, Y: 8, radio: 12, encontrado: false },
+                    { nombre: "Llave goteando", X: 83, Y: 50, radio: 6, encontrado: false },
+                    { nombre: "Papel impreso por una sola cara", X: 30, Y: 70, radio: 6, encontrado: false },
+                    { nombre: "Residuo mal separado", X: 85, Y: 82, radio: 8, encontrado: false },
+                    { nombre: "Planta regada excesivamente", X: 63, Y: 66, radio: 9, encontrado: false },
+                    { nombre: "Almacenamiento digital saturado", X: 29.6, Y: 56.4, radio: 6, encontrado: false }
+                ]
+            }
+        ];
+
+        let nombreJugador = "";
+        let nivelActual = 0;
+        let encontradosEnNivel = 0;
+        let tiempoInicio;
+        let intervaloTiempo;
+        let tiempoTotalAcumulado = 0;
+        let penalizacionTiempo = 0;
+
+        let rankingLocal = [
+            { nombre: "EcoMaster", tiempo: 32.40 },
+            { nombre: "GreenSpy", tiempo: 45.15 },
+            { nombre: "PlanetaSalvo", tiempo: 58.80 }
+        ];
+
+        document.getElementById("btn-iniciar").onclick = iniciarJuego;
+        document.getElementById("btn-siguiente").onclick = siguienteNivel;
+        document.getElementById("btn-reiniciar").onclick = reiniciarTodo;
+        document.getElementById("imagen-escenario").onclick = registrarClic;
+
+        function iniciarJuego() {
+            nombreJugador = document.getElementById("nombre-jugador").value.trim();
+            if (!nombreJugador) return alert("Por favor, ingresa tu nombre de detective.");
+            
+            cambiarPantalla("pantalla-juego");
+            nivelActual = 0;
+            tiempoTotalAcumulado = 0;
+            penalizacionTiempo = 0;
+            cargarNivel();
+        }
+
+        function cargarNivel() {
+            encontradosEnNivel = 0;
+            document.getElementById("btn-siguiente").style.display = "none";
+            
+            const datosNivel = niveles[nivelActual];
+            document.getElementById("info-nivel").innerText = `Nivel ${datosNivel.nivel}: ${datosNivel.entorno}`;
+            document.getElementById("imagen-escenario").src = datosNivel.imagen;
+            
+            datosNivel.impactos.forEach(imp => imp.encontrado = false);
+            actualizarMensajeObjetivos();
+            document.querySelectorAll('.marcador').forEach(m => m.remove());
+
+            tiempoInicio = performance.now();
+            intervaloTiempo = setInterval(() => {
+                let tiempoActual = (performance.now() - tiempoInicio) / 1000;
+                let tiempoDesplegado = tiempoTotalAcumulado + tiempoActual + penalizacionTiempo;
+                document.getElementById("cronometro").innerText = tiempoDesplegado.toFixed(2) + "s";
+            }, 40);
+        }
+
+        function actualizarMensajeObjetivos() {
+            const datosNivel = niveles[nivelActual];
+            document.getElementById("mensaje").innerHTML = `<strong>Objetivo:</strong> Encuentra ${datosNivel.impactosRequeridos} impactos ambientales.<br>Llevas: <strong>${encontradosEnNivel} de ${datosNivel.impactosRequeridos}</strong>`;
+        }
+
+        function registrarClic(event) {
+            const img = document.getElementById("imagen-escenario");
+            const rect = img.getBoundingClientRect();
+const clickX = ((event.clientX - rect.left) / rect.width) * 100;
+            const clickY = ((event.clientY - rect.top) / rect.height) * 100;
+
+            if (MODO_DISEÑADOR) {
+                console.log(`Clic detectado en -> X: ${clickX.toFixed(1)}, Y: ${clickY.toFixed(1)}`);
+            }
+
+            const datosNivel = niveles[nivelActual];
+            if (encontradosEnNivel >= datosNivel.impactosRequeridos) return;
+
+            let impactoDetectado = null;
+
+            for (let imp of datosNivel.impactos) {
+                if (imp.encontrado) continue;
+                let distancia = Math.sqrt(Math.pow(clickX - imp.X, 2) + Math.pow(clickY - imp.Y, 2));
+                if (distancia <= imp.radio) {
+                    impactoDetectado = imp;
+                    break;
+                }
+            }
+
+            const marcador = document.createElement("div");
+            marcador.classList.add("marcador");
+            marcador.style.left = `${clickX}%`;
+            marcador.style.top = `${clickY}%`;
+
+            if (impactoDetectado) {
+                impactoDetectado.encontrado = true;
+                encontradosEnNivel++;
+                
+                marcador.classList.add("correcto");
+                marcador.style.width = `${impactoDetectado.radio * 2}%`;
+                marcador.style.height = `${impactoDetectado.radio * 2 * (rect.width / rect.height)}%`;
+                
+                alert(`¡Excelente! Encontraste: ${impactoDetectado.nombre}`);
+                actualizarMensajeObjetivos();
+
+                if (encontradosEnNivel >= datosNivel.impactosRequeridos) {
+                    clearInterval(intervaloTiempo);
+                    let tiempoNivel = (performance.now() - tiempoInicio) / 1000;
+                    tiempoTotalAcumulado += tiempoNivel;
+
+                    document.getElementById("mensaje").innerHTML = "<strong>¡Felicidades!</strong> Encontraste los impactos necesarios para este escenario.";
+                    document.getElementById("btn-siguiente").style.display = "inline-block";
+                }
+            } else {
+                penalizacionTiempo += 3;
+                mostrarAlertaPenalizacion();
+                
+                marcador.classList.add("incorrecto");
+                marcador.style.width = "4%";
+                marcador.style.height = `${4 * (rect.width / rect.height)}%`;
+            }
+            document.getElementById("contenedor-juego").appendChild(marcador);
+        }
+
+        function mostrarAlertaPenalizacion() {
+            const alerta = document.getElementById("alerta-penalizacion");
+            alerta.style.display = "block";
+            setTimeout(() => { alerta.style.display = "none"; }, 600);
+        }
+
+        function siguienteNivel() {
+            if (nivelActual < niveles.length - 1) {
+                nivelActual++;
+                cargarNivel();
+            } else {
+                guardarPuntajeLocal();
+            }
+        }
+
+        function guardarPuntajeLocal() {
+            let tiempoFinal = tiempoTotalAcumulado + penalizacionTiempo;
+            rankingLocal.push({
+                nombre: nombreJugador,
+                tiempo: parseFloat(tiempoFinal.toFixed(2))
+            });
+            rankingLocal.sort((a, b) => a.tiempo - b.tiempo);
+            actualizarTablaHTML();
+            cambiarPantalla("pantalla-ranking");
+        }
+
+        function actualizarTablaHTML() {
+            const tbody = document.getElementById("cuerpo-tabla");
+            tbody.innerHTML = "";
+            const top10 = rankingLocal.slice(0, 10);
+            
+            top10.forEach((registro, indice) => {
+                let puesto = indice + 1;
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${puesto === 1 ? '🥇 1' : puesto === 2 ? '🥈 2' : puesto === 3 ? '🥉 3' : puesto}</td>
+                        <td><strong>${registro.nombre}</strong></td>
+                        <td>${registro.tiempo.toFixed(2)}s</td>
+                    </tr>`;
+            });
+        }
+
+        function cambiarPantalla(idPantalla) {
+            document.querySelectorAll('.pantalla').forEach(p => p.style.display = 'none');
+            document.getElementById(idPantalla).style.display = 'block';
+        }
+
+        function reiniciarTodo() {
+            document.getElementById("nombre-jugador").value = "";
+            cambiarPantalla("pantalla-inicio");
+        }
+    </script>
+</body>
+</html>
