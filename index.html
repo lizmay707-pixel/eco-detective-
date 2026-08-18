@@ -76,10 +76,9 @@
                 nivel: 1,
                 entorno: "Oficina",
                 imagen: "oficina1.png", 
-                impactosRequeridos: 7, 
+                impactosRequeridos: 6, 
                 impactos: [
                     { nombre: "Luz encendida en espacio vacío", X: 20, Y: 54, radio: 8, encontrado: false },
-                    { nombre: "Computador encendido sin usuario", X: 62, Y: 62, radio: 7, encontrado: false },
                     { nombre: "Uso de vasos desechables",  X: 68, Y: 8, radio: 5, encontrado: false },
                     { nombre: "Cable conectado sin uso", X: 18, Y: 72, radio: 6, encontrado: false },
                     { nombre: "Hojas impresas innecesariamente", X: 64, Y: 51, radio: 6, encontrado: false },
@@ -94,10 +93,10 @@
                 impactosRequeridos: 8,
                 impactos: [
                     { nombre: "Vaso desechable utilizado", X: 35, Y: 45, radio: 6, encontrado: false },
-                    { nombre: "Alimento desperdiciado", X: 79, Y: 90, radio: 2, encontrado: false },
+                    { nombre: "Alimento desperdiciado", X: 79, Y: 90, radio: 6, encontrado: false },
                     { nombre: "Llave abierta", X: 11, Y: 69, radio: 7, encontrado: false },
                     { nombre: "Residuo orgánico mal clasificado",  X: 55, Y: 73, radio: 8, encontrado: false },
-                    { nombre: "Envase contaminado con comida", X: 84, Y: 74, radio: 6, encontrado: false },
+                    { nombre: "Envase contaminado con comida", X: 84, Y: 74, radio: 4, encontrado: false },
                     { nombre: "Servilletas en exceso", X: 57, Y: 54, radio: 5, encontrado: false },
                     { nombre: "Luces encendidas en zona vacía", X: 91, Y: 15, radio: 10, encontrado: false },
                     { nombre: "Botella plástica desechable", X: 96, Y: 52, radio: 6, encontrado: false }
@@ -130,11 +129,7 @@
         let tiempoTotalAcumulado = 0;
         let penalizacionTiempo = 0;
 
-        let rankingLocal = [
-            { nombre: "EcoMaster", tiempo: 32.40 },
-            { nombre: "GreenSpy", tiempo: 45.15 },
-            { nombre: "PlanetaSalvo", tiempo: 58.80 }
-        ];
+        let rankingLocal = [];
 
         document.getElementById("btn-iniciar").onclick = iniciarJuego;
         document.getElementById("btn-siguiente").onclick = siguienteNivel;
